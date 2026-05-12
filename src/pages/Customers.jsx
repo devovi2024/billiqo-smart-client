@@ -20,9 +20,7 @@ export default function Customers() {
 
   return (
     <div className="p-6 space-y-4">
-
       <h2 className="text-xl font-bold">Customers</h2>
-
       <input
         className="border p-2 w-full rounded dark:bg-gray-900"
         value={search}
@@ -34,11 +32,8 @@ export default function Customers() {
           setParams(value ? { search: value } : {});
         }}
       />
-
       <div className="border rounded-xl overflow-hidden">
-
         <table className="w-full text-sm">
-
           <thead className="bg-gray-100 dark:bg-gray-800">
             <tr>
               <th className="p-3">Name</th>
@@ -46,7 +41,6 @@ export default function Customers() {
               <th className="p-3">Spent</th>
             </tr>
           </thead>
-
           <tbody>
             {isLoading ? (
               <>
@@ -66,14 +60,10 @@ export default function Customers() {
               ))
             )}
           </tbody>
-
         </table>
-
       </div>
 
-      {/* PAGINATION CONTROLS */}
       <div className="flex items-center justify-center gap-3">
-
         <button
           disabled={page === 1}
           onClick={() => setPage((p) => p - 1)}
@@ -81,11 +71,9 @@ export default function Customers() {
         >
           Prev
         </button>
-
         <span className="text-sm">
           Page {page} of {totalPages}
         </span>
-
         <button
           disabled={page === totalPages}
           onClick={() => setPage((p) => p + 1)}
@@ -93,9 +81,7 @@ export default function Customers() {
         >
           Next
         </button>
-
       </div>
-
     </div>
   );
 }
