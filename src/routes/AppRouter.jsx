@@ -9,6 +9,7 @@ import Transactions from "../pages/Transactions";
 import Analytics from "../pages/Analytics";
 import AIInsights from "../pages/AIInsights";
 import Settings from "../pages/Settings";
+import Dash from "../pages/Dash";
 
 const router = createBrowserRouter([
   {
@@ -43,6 +44,10 @@ const router = createBrowserRouter([
         path: "settings",
         element: <Settings />,
       },
+      {
+        path: "dash",
+        element: <Dash/>
+      }
     ],
   },
 ]);

@@ -3,7 +3,7 @@ import Navbar from "./Navbar";
 
 export default function Layout({ children }) {
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 dark:text-white">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 dark:text-white">
       
       <Sidebar />
 

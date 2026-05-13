@@ -1,75 +1,373 @@
-import StatCard from "../components/StatCard/StatCard";
-import RevenueChart from "../components/charts/RevenueChart";
-import { stats } from "../data/dashboardData";
+// src/components/Dashboard/Dashboard.jsx
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  TrendingUp, ShoppingBag, Plus, Users, BarChart3,
+  Star, Activity, Clock, ThumbsUp, Download, Filter,
+  Calendar, DollarSign, Eye, RefreshCw
+} from "lucide-react";
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
+  LineChart, Line, Area, AreaChart
+} from "recharts";
 
+import "./Dashboard.scss";
+
+// ============================================================
+// MOCK DATA (ready for future API replacement)
+// ============================================================
+
+// Stats cards data
+export const mockStats = [
+  { title: "Total Revenue", value: "$54,231", delta: "+12.5%", icon: TrendingUp },
+  { title: "Total Customers", value: "1,248", delta: "+8.2%", icon: Users },
+  { title: "Invoices", value: "156", delta: "+5.1%", icon: BarChart3 },
+  { title: "Avg Order Value", value: "$347", delta: "+3.2%", icon: DollarSign },
+];
+
+// Revenue by category (pie chart)
+export const revenueByCategory = [
+  { name: "Product Sales", value: 40200, color: "#10b981" },
+  { name: "Services", value: 27100, color: "#3b82f6" },
+  { name: "Subscriptions", value: 16300, color: "#f59e0b" },
+  { name: "Consulting", value: 10800, color: "#8b5cf6" },
+  { name: "Others", value: 5600, color: "#f97316" },
+];
+
+// Monthly revenue, expenses, profit (bar & area charts)
+export const monthlyData = [
+  { month: "Jan", revenue: 42000, expenses: 28000, profit: 14000 },
+  { month: "Feb", revenue: 45800, expenses: 29500, profit: 16300 },
+  { month: "Mar", revenue: 51200, expenses: 31000, profit: 20200 },
+  { month: "Apr", revenue: 48700, expenses: 30500, profit: 18200 },
+  { month: "May", revenue: 54231, expenses: 32800, profit: 21431 },
+  { month: "Jun", revenue: 58900, expenses: 34500, profit: 24400 },
+];
+
+// Invoices (with multiple filterable fields)
+export const mockInvoices = [
+  { id: "INV-1001", customer: "Tech Solutions Inc.", date: "2024-05-31", amount: 2500, status: "Paid", category: "Enterprise" },
+  { id: "INV-1002", customer: "Digital Agency", date: "2024-05-30", amount: 1800, status: "Paid", category: "Agency" },
+  { id: "INV-1003", customer: "Global Corp Ltd.", date: "2024-05-30", amount: 3650, status: "Pending", category: "Enterprise" },
+  { id: "INV-1004", customer: "Startup Ventures", date: "2024-05-29", amount: 1250, status: "Paid", category: "Startup" },
+  { id: "INV-1005", customer: "Creative Studio", date: "2024-05-29", amount: 2100, status: "Overdue", category: "Agency" },
+  { id: "INV-1006", customer: "Future Labs", date: "2024-05-28", amount: 3200, status: "Pending", category: "Startup" },
+];
+
+// Products with categories & growth
+export const mockProducts = [
+  { id: 1, name: "Product A", sales: 21231.89, category: "Electronics", growth: "+12%", stock: 45 },
+  { id: 2, name: "Product B", sales: 12123.45, category: "Clothing", growth: "+8%", stock: 120 },
+  { id: 3, name: "Product C", sales: 8231.00, category: "Home", growth: "+5%", stock: 32 },
+  { id: 4, name: "Product D", sales: 5123.90, category: "Electronics", growth: "+15%", stock: 18 },
+  { id: 5, name: "Product E", sales: 2521.65, category: "Beauty", growth: "+3%", stock: 67 },
+];
+
+// Customer reviews
+export const mockReviews = [
+  { id: 1, reviewer: "John D.", rating: 5, text: "Excellent product quality, fast delivery!", date: "2024-05-28", product: "Product A", verified: true },
+  { id: 2, reviewer: "Sarah M.", rating: 4, text: "Good value for money, support was helpful.", date: "2024-05-27", product: "Product B", verified: true },
+  { id: 3, reviewer: "Mike R.", rating: 3, text: "Average experience, some features missing.", date: "2024-05-26", product: "Product C", verified: false },
+  { id: 4, reviewer: "Emma W.", rating: 5, text: "Absolutely love it! Will buy again.", date: "2024-05-25", product: "Product A", verified: true },
+  { id: 5, reviewer: "Alex K.", rating: 2, text: "Not satisfied with the shipping time.", date: "2024-05-24", product: "Product D", verified: false },
+];
+
+// Customer satisfaction (donut)
+export const satisfactionData = [
+  { name: "Very Satisfied", value: 68, color: "#10b981" },
+  { name: "Satisfied", value: 22, color: "#3b82f6" },
+  { name: "Neutral", value: 7, color: "#f59e0b" },
+  { name: "Unsatisfied", value: 3, color: "#ef4444" },
+];
+
+// Recent activities
+export const recentActivities = [
+  { id: 1, user: "Alex Morgan", action: "created invoice INV-1006", time: "2 min ago" },
+  { id: 2, user: "Jamie Lee", action: "updated product pricing", time: "1 hour ago" },
+  { id: 3, user: "Taylor Smith", action: "added new customer 'NexGen Ltd'", time: "3 hours ago" },
+  { id: 4, user: "Casey Brown", action: "generated monthly report", time: "5 hours ago" },
+];
+
+// AI insights (generated by backend AI service)
+export const mockAIInsights = [
+  { id: 1, type: "success", message: "📈 Weekend sales are 30% higher than weekdays. Consider weekend promotions." },
+  { id: 2, type: "info", message: "🏆 Product A is the top revenue driver – increase ad spend by 15%." },
+  { id: 3, type: "warning", message: "⚠️ 12 invoices are overdue. Send automated reminders." },
+  { id: 4, type: "danger", message: "💡 Slow-moving items in Beauty category. Offer 10% discount." },
+];
+
+// ============================================================
+// HELPER FUNCTIONS
+// ============================================================
+const formatCurrency = (value) => `$${value.toLocaleString()}`;
+const renderStars = (rating) => "★".repeat(rating) + "☆".repeat(5 - rating);
+
+// ============================================================
+// MAIN DASHBOARD COMPONENT
+// ============================================================
 export default function Dashboard() {
+  // --- FILTER STATES (section-specific) ---
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState("All");
+  const [invoiceCategoryFilter, setInvoiceCategoryFilter] = useState("All");
+  const [productCategoryFilter, setProductCategoryFilter] = useState("All");
+  const [reviewRatingFilter, setReviewRatingFilter] = useState(0); // 0 = All
+
+  // --- DERIVED FILTERED DATA ---
+  const filteredInvoices = useMemo(() => {
+    let filtered = mockInvoices;
+    if (invoiceStatusFilter !== "All") filtered = filtered.filter(inv => inv.status === invoiceStatusFilter);
+    if (invoiceCategoryFilter !== "All") filtered = filtered.filter(inv => inv.category === invoiceCategoryFilter);
+    return filtered;
+  }, [invoiceStatusFilter, invoiceCategoryFilter]);
+
+  const filteredProducts = useMemo(() => {
+    if (productCategoryFilter === "All") return mockProducts;
+    return mockProducts.filter(p => p.category === productCategoryFilter);
+  }, [productCategoryFilter]);
+
+  const filteredReviews = useMemo(() => {
+    if (reviewRatingFilter === 0) return mockReviews;
+    return mockReviews.filter(r => r.rating === reviewRatingFilter);
+  }, [reviewRatingFilter]);
+
+  // Unique filter options
+  const invoiceCategories = ["All", ...new Set(mockInvoices.map(inv => inv.category))];
+  const productCategories = ["All", ...new Set(mockProducts.map(p => p.category))];
+
   return (
-    <div className="space-y-6 p-6">
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-        {stats.map((item, i) => (
-          <StatCard
-            key={i}
-            title={item.title}
-            value={item.value}
-            icon={item.icon}
-          />
-        ))}
-
-      </div>
-
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border dark:border-gray-800">
-        <RevenueChart />
-      </div>
-
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border dark:border-gray-800">
-
-        <h2 className="font-semibold text-lg mb-4">
-          Recent Transactions
-        </h2>
-
-        <div className="overflow-x-auto">
-
-          <table className="w-full text-sm">
-
-            {/* Head */}
-            <thead>
-              <tr className="text-left text-gray-500 border-b dark:border-gray-800">
-                <th className="py-3">ID</th>
-                <th className="py-3">Customer</th>
-                <th className="py-3">Amount</th>
-                <th className="py-3">Status</th>
-              </tr>
-            </thead>
-
-            <tbody className="text-gray-800 dark:text-gray-200">
-
-              <tr className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                <td className="py-4 font-medium">#001</td>
-                <td>John Doe</td>
-                <td>$120</td>
-                <td className="text-green-500 font-medium">
-                  Paid
-                </td>
-              </tr>
-
-              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                <td className="py-4 font-medium">#002</td>
-                <td>Sarah</td>
-                <td>$90</td>
-                <td className="text-red-500 font-medium">
-                  Pending
-                </td>
-              </tr>
-
-            </tbody>
-
-          </table>
-
+    <div className="dashboard">
+      {/* ========== HEADER ========== */}
+      <div className="header-section">
+        <div className="greeting">
+          <p className="time-text">Good Morning, Admin</p>
+          <h1>Dashboard Overview</h1>
+        </div>
+        <div className="header-actions">
+          <button className="report-btn"><BarChart3 size={18} /> Export Report</button>
+          <button className="report-btn"><RefreshCw size={18} /> Refresh</button>
         </div>
       </div>
 
+      {/* ========== STATS CARDS ========== */}
+      <div className="stats-grid">
+        {mockStats.map((stat, idx) => {
+          const Icon = stat.icon;
+          return (
+            <div key={idx} className="stat-card">
+              <div className="stat-header"><Icon size={22} /><span className="delta">{stat.delta}</span></div>
+              <p className="stat-title">{stat.title}</p>
+              <p className="stat-value">{stat.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ========== CHARTS ROW (Line, Pie, Bar) ========== */}
+      <div className="charts-row">
+        {/* Revenue Trend (Line Chart) */}
+        <div className="chart-card">
+          <h2>Revenue Trend</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" />
+              <YAxis tickFormatter={(v) => `$${v/1000}k`} />
+              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} dot={{ fill: "#10b981" }} />
+            </LineChart>
+          </ResponsiveContainer>
+          <div className="chart-summary">
+            <div className="summary-box"><p>Total Revenue</p><p>{formatCurrency(monthlyData.reduce((s,m)=>s+m.revenue,0))}</p></div>
+            <div className="summary-box"><p>Avg Monthly</p><p>{formatCurrency(monthlyData.reduce((s,m)=>s+m.revenue,0)/monthlyData.length)}</p></div>
+          </div>
+        </div>
+
+        {/* Revenue by Category (Pie Chart) */}
+        <div className="chart-card">
+          <h2>Revenue by Category</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={revenueByCategory} dataKey="value" outerRadius={80} label={({name,percent}) => `${name} ${(percent*100).toFixed(0)}%`}>
+                {revenueByCategory.map((e,i) => <Cell key={i} fill={e.color} />)}
+              </Pie>
+              <Tooltip formatter={(v) => formatCurrency(v)} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Monthly Performance (Bar Chart) */}
+        <div className="chart-card">
+          <h2>Monthly Performance</h2>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis tickFormatter={(v) => `$${v/1000}k`} />
+              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Legend />
+              <Bar dataKey="revenue" fill="#10b981" radius={[4,4,0,0]} />
+              <Bar dataKey="expenses" fill="#f59e0b" radius={[4,4,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ========== SECONDARY CHARTS (Area + Donut) ========== */}
+      <div className="secondary-charts">
+        <div className="chart-card">
+          <h2>Profit Margin <TrendingUp size={16} /></h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={monthlyData}>
+              <defs>
+                <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis tickFormatter={(v) => `$${v/1000}k`} />
+              <Tooltip formatter={(v) => formatCurrency(v)} />
+              <Area type="monotone" dataKey="profit" stroke="#8b5cf6" fill="url(#profitGradient)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="chart-card">
+          <h2>Customer Satisfaction</h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={satisfactionData} dataKey="value" innerRadius={55} outerRadius={80} label={({name,percent}) => `${name} ${(percent*100).toFixed(0)}%`}>
+                {satisfactionData.map((e,i) => <Cell key={i} fill={e.color} />)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ========== QUICK ACTIONS ========== */}
+      <div className="quick-actions">
+        <button className="action-btn invoice"><Plus size={16} /> New Invoice</button>
+        <button className="action-btn customer"><Users size={16} /> Add Customer</button>
+        <button className="action-btn product"><ShoppingBag size={16} /> Add Product</button>
+        <button className="action-btn reports"><Eye size={16} /> View Reports</button>
+      </div>
+
+      {/* ========== INVOICES SECTION (with dual filters) ========== */}
+      <div className="section-card invoices-section">
+        <div className="section-header">
+          <h2>Recent Invoices</h2>
+          <div className="filter-group">
+            <select value={invoiceStatusFilter} onChange={(e) => setInvoiceStatusFilter(e.target.value)}>
+              <option value="All">All Status</option>
+              <option value="Paid">Paid</option>
+              <option value="Pending">Pending</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+            <select value={invoiceCategoryFilter} onChange={(e) => setInvoiceCategoryFilter(e.target.value)}>
+              {invoiceCategories.map(cat => <option key={cat}>{cat}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="invoice-list">
+          {filteredInvoices.map(inv => (
+            <div key={inv.id} className="invoice-item">
+              <div>
+                <p className="invoice-id">{inv.id}</p>
+                <p className="customer-name">{inv.customer}</p>
+                <small>{inv.date} • {inv.category}</small>
+              </div>
+              <div className="text-right">
+                <p className="amount">{formatCurrency(inv.amount)}</p>
+                <span className={`status ${inv.status}`}>{inv.status}</span>
+              </div>
+            </div>
+          ))}
+          {filteredInvoices.length === 0 && <div className="no-results">No invoices match the filters.</div>}
+        </div>
+      </div>
+
+      {/* ========== TWO COLUMN GRID: PRODUCTS + ACTIVITY ========== */}
+      <div className="two-col-grid">
+        {/* Products with category filter */}
+        <div className="section-card">
+          <div className="section-header">
+            <h2><TrendingUp size={18} /> Top Products</h2>
+            <select value={productCategoryFilter} onChange={(e) => setProductCategoryFilter(e.target.value)}>
+              {productCategories.map(cat => <option key={cat}>{cat}</option>)}
+            </select>
+          </div>
+          <div className="product-list">
+            {filteredProducts.map(p => (
+              <div key={p.id} className="product-row">
+                <div className="product-info">
+                  <span className={`product-dot ${p.category === "Electronics" ? "dot-emerald" : p.category === "Clothing" ? "dot-blue" : "dot-amber"}`}></span>
+                  <span className="product-name">{p.name}</span>
+                </div>
+                <div className="product-stats">
+                  <span className="product-value">{formatCurrency(p.sales)}</span>
+                  <span className="growth">{p.growth}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="section-card">
+          <h2><Activity size={18} /> Recent Activity</h2>
+          <div className="activity-list">
+            {recentActivities.map(act => (
+              <div key={act.id} className="activity-item">
+                <div className="activity-icon"><Clock size={14} /></div>
+                <div className="activity-details">
+                  <p><strong>{act.user}</strong> {act.action}</p>
+                  <span className="activity-time">{act.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ========== REVIEWS SECTION (with rating filter) ========== */}
+      <div className="section-card reviews-section">
+        <div className="section-header">
+          <h2><Star size={18} /> Customer Reviews</h2>
+          <div className="filter-pills">
+            <button className={`pill ${reviewRatingFilter === 0 ? "active" : ""}`} onClick={() => setReviewRatingFilter(0)}>All</button>
+            <button className={`pill ${reviewRatingFilter === 5 ? "active" : ""}`} onClick={() => setReviewRatingFilter(5)}>★★★★★</button>
+            <button className={`pill ${reviewRatingFilter === 4 ? "active" : ""}`} onClick={() => setReviewRatingFilter(4)}>★★★★☆</button>
+            <button className={`pill ${reviewRatingFilter === 3 ? "active" : ""}`} onClick={() => setReviewRatingFilter(3)}>★★★☆☆</button>
+          </div>
+        </div>
+        <div className="reviews-list">
+          {filteredReviews.map(r => (
+            <div key={r.id} className="review-item">
+              <div className="reviewer">
+                <span className="name">{r.reviewer}</span>
+                <span className="stars">{renderStars(r.rating)}</span>
+                {r.verified && <span className="verified-badge">✓ Verified</span>}
+              </div>
+              <p className="review-text">{r.text}</p>
+              <small>{r.date} • {r.product}</small>
+            </div>
+          ))}
+          {filteredReviews.length === 0 && <div className="no-results">No reviews match.</div>}
+        </div>
+      </div>
+
+      {/* ========== AI INSIGHTS (from AI service) ========== */}
+      <div className="section-card ai-insights">
+        <h2><ThumbsUp size={18} /> AI Business Insights</h2>
+        <div className="insights-grid">
+          {mockAIInsights.map(i => (
+            <div key={i.id} className={`insight-card type-${i.type}`}>
+              <p>{i.message}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
