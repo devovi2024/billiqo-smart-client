@@ -1,55 +1,79 @@
-import { Link } from "react-router-dom";
-import useTheme from "../../hooks/useTheme";
-import { Bell, CalendarDays, Search, ChevronDown, Moon, Sun } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bell, Search, Sun, LogOut, User } from "lucide-react";
 
 export default function Navbar() {
-  const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  let user = null;
+
+  try {
+    user = JSON.parse(localStorage.getItem("user"));
+  } catch {
+    user = null;
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
 
   return (
-    <div className="flex h-20 items-center justify-between gap-4 border-b border-slate-200 bg-white px-6 text-slate-900 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white">
-      <div className="flex flex-1 items-center gap-4">
-        <div className="relative w-full max-w-xl">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    <div className="flex h-16 items-center justify-between border-b bg-white px-6 dark:bg-slate-950 dark:border-slate-800">
+      <div className="flex flex-1 items-center">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <input
             placeholder="Search anything..."
-            className="w-full rounded-full border border-slate-200 bg-slate-50 py-3 pl-12 pr-4 text-sm text-slate-900 outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-slate-600"
+            className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm outline-none dark:border-slate-700 dark:bg-slate-900"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-          <CalendarDays size={16} />
-          May 1 - May 31, 2024
-          <ChevronDown size={16} />
-        </button>
-
-        <button className="rounded-2xl border border-slate-200 bg-slate-100 p-3 text-slate-700 transition hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+      <div className="flex items-center gap-4">
+        <button className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-slate-800">
           <Bell size={18} />
         </button>
 
-        <button
-          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-          className="rounded-2xl border border-slate-200 bg-slate-100 p-3 text-slate-700 transition hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+        <button className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-slate-800">
+          <Sun size={18} />
         </button>
 
-        <div>
-          <Link to="dash">
-          Dash
-          
-          </Link>
-        </div>
+        <div className="relative">
+          <button
+            onClick={() => setOpen(!open)}
+            className="flex items-center gap-2 rounded-full border px-3 py-1 hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-900"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-white">
+              <User size={16} />
+            </div>
 
-        <div className="flex items-center gap-3 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-950">
-            JD
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold">John Doe</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Admin</p>
-          </div>
+            <div className="text-left text-sm">
+              <p className="font-medium">{user?.name || "User"}</p>
+              <p className="text-xs text-gray-500">{user?.role || "admin"}</p>
+            </div>
+          </button>
+
+          {open && (
+            <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white shadow dark:border-slate-700 dark:bg-slate-900">
+              <Link
+                to="/settings"
+                className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800"
+              >
+                Settings
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-slate-800"
+              >
+                <LogOut size={16} />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

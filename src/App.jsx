@@ -1,12 +1,7 @@
-import { Outlet } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 
 const App = () => {
-  return (
-    <Layout>
-      <Outlet />
-    </Layout>
-  );
+  return <Layout />;
 };
 
 export default App;
