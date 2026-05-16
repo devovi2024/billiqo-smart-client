@@ -12,7 +12,7 @@ export default function Login() {
 
   const login = useLogin((data) => {
     localStorage.setItem("token", data.token);
-    navigate("/dash");
+    navigate("/");
   });
 
   return (

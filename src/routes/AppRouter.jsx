@@ -7,7 +7,7 @@ import Register from "../pages/Register/Register";
 
 import ProtectedRoute from "./ProtectedRoute";
 
-import Dashboards from "../pages/Dashboards";
+import Dashboard from "../pages/Dashboards";
 import Invoices from "../pages/Invoices";
 import Customers from "../pages/Customers";
 import Transactions from "../pages/Transactions";
@@ -32,7 +32,7 @@ const router = createBrowserRouter([
         children: [
           {
             path: "/",
-            element: <Dashboards />,
+            element: <Dashboard />,
           },
           {
             path: "invoices",
